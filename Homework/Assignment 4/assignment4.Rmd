@@ -1,0 +1,104 @@
+---
+title: "ECON 390 SID 2"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Question 1: Reading in Data
+
+### Read in Sales Data
+```{r}
+library(dplyr)
+Sales = read.csv('sales_data.csv')
+```
+
+### Summary statistics for price variable
+```{r}
+summary(Sales$price)
+```
+
+### Mean of price per store
+```{r}
+pricePerStore = aggregate(Sales$price, list(Sales$store), FUN = mean)
+```
+
+# Question 2: Creating Product Cross-Section
+
+### Cross Section df
+```{r}
+# Sjm = Qjm / Nm
+# Qjm = total quantity sold of product j in market M (store)
+# Nm = total size of market (store), surrounding area of each store
+Population = read.csv('population_data.csv')
+Sales =  merge(Population, Sales, by=c("store"), all = TRUE)
+PricePerProduct = aggregate(Sales$price, list(Sales$product, Sales$store), FUN = mean)
+SalesPerProduct = aggregate(Sales$quantity, list(Sales$product, Sales$store), FUN = sum)
+PopulationPerStore = aggregate(Sales$pop_size, list(Sales$product, Sales$store), FUN = mean)
+MarketSharePerStoreProduct = data.frame(PricePerProduct[2], PricePerProduct[1], SalesPerProduct[3], PopulationPerStore[3])
+MarketSharePerStoreProduct = data.frame(MarketSharePerStoreProduct[1], MarketSharePerStoreProduct[2], MarketSharePerStoreProduct[3], PopulationPerStore[3],  MarketSharePerStoreProduct[3]/MarketSharePerStoreProduct[4], PricePerProduct[3])
+colnames(MarketSharePerStoreProduct) = c('store','product','sales','pop_size', 'share', 'price')
+```
+
+# Question 3: Identify Supply and Demand
+
+### Scatter Plot of Price vs Quantity
+```{r}
+plot(MarketSharePerStoreProduct$share, MarketSharePerStoreProduct$price, ylab = "Price", xlab = "Market Share", main = "Price vs Market Share")
+```
+There seems to be an positive weak correlation between Price and Market Share.
+The law of supply and demand may hold
+
+### Merged Cost Data
+```{r}
+Costs = read.csv("cost_data.csv")
+MarketSharePerStoreProduct = data.frame(MarketSharePerStoreProduct[1], MarketSharePerStoreProduct[2], MarketSharePerStoreProduct[3], MarketSharePerStoreProduct[4], MarketSharePerStoreProduct[5], MarketSharePerStoreProduct[6], Costs[3])
+colnames(MarketSharePerStoreProduct) = c('store','product','sales','pop_size', 'share', 'price','cost_shift')
+```
+### ggplot
+```{r}
+library(ggplot2)
+ggplot(MarketSharePerStoreProduct, aes(y = share, x = price, color = cost_shift) ) + geom_point() + geom_smooth(method = "lm", se = FALSE)
+```
+
+# Question 4: Price Aggregation
+```{r}
+eps = rnorm(NROW(Sales),0, 0.05^2)
+
+#Repeated from 2 and 3
+Population = read.csv('population_data.csv')
+Sales = read.csv('sales_data.csv')
+
+# Acounting for EPS
+SalesEps =  merge(Population, Sales, by=c("store"), all = TRUE)
+SalesEps$price =  Sales$price + eps
+PricePerProduct = aggregate(SalesEps$price, list(SalesEps$product, SalesEps$store), FUN = mean)
+
+#Repeated from 2 and 3
+SalesPerProduct = aggregate(SalesEps$quantity, list(SalesEps$product, SalesEps$store), FUN = sum)
+PopulationPerStore = aggregate(SalesEps$pop_size, list(SalesEps$product, SalesEps$store), FUN = mean)
+MarketSharePerStoreProduct = data.frame(PricePerProduct[2], PricePerProduct[1], SalesPerProduct[3], PopulationPerStore[3])
+MarketSharePerStoreProduct = data.frame(MarketSharePerStoreProduct[1], MarketSharePerStoreProduct[2], MarketSharePerStoreProduct[3], PopulationPerStore[3],  MarketSharePerStoreProduct[3]/MarketSharePerStoreProduct[4], PricePerProduct[3])
+colnames(MarketSharePerStoreProduct) = c('store','product','sales','pop_size', 'share', 'price')
+MarketSharePerStoreProduct = data.frame(MarketSharePerStoreProduct[1], MarketSharePerStoreProduct[2], MarketSharePerStoreProduct[3], MarketSharePerStoreProduct[4], MarketSharePerStoreProduct[5], MarketSharePerStoreProduct[6], Costs[3])
+colnames(MarketSharePerStoreProduct) = c('store','product','sales','pop_size', 'share', 'price','cost_shift')
+```
+Perhaps an alternative appraoch would be to take the median or mode to get rid of outliers
+
+# Question 5: Basic Descriptive Analysis
+
+### Price Breakdown
+```{r} 
+MarketSharePerStoreProduct %>% group_by(cost_shift) %>% summarise(price = mean(price))
+```
+As expected as prices are higher the associated average price seems to be higher as well
+
+### Regression
+```{r}
+model = glm(price ~ factor(cost_shift), data = MarketSharePerStoreProduct)
+summary(model)
+```
+
+The intercept seems to be about the same as the high cost average. Again this is similar to our results from before, as subtracting coefficients will give low and normal average costs. As production cost is more so is the general price
+
+

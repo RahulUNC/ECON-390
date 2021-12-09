@@ -1,0 +1,201 @@
+---
+title: "ECON 390 Homework 1"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+## Creating Variables
+1. Create a vector of submission IDs of you and your group members called “sub ids”
+```{r creatingVariables1}
+sub_ids = c("SID2")
+sub_ids
+```
+
+2. Create a vector of the integers from 1 to 5 called “my vec”.
+```{r creatingVariables2}
+my_vec = c(1:5)
+my_vec
+```
+
+3. Update “my vec” by adding 10 to each element of “my vec”
+```{r creatingVariables3}
+my_vec = my_vec + 10
+my_vec
+```
+
+4. Create a vector of integers from 1994 to 2021 called “years alive.”
+```{r creatingVariables4}
+years_alive = c(1994:2021)
+years_alive
+```
+
+5. Create a vector of logicals testing if an element in the “years alive” vector is a leap year
+```{r creatingVariables5}
+names(years_alive) = c(1994:2021)
+ifleap = list(names(years_alive), years_alive%%4 == 0)
+ifleap
+```
+
+6. Draw 1000 simulations from a N(0, 1) distribution and call it “norm draws”.
+```{r creatingVariables6}
+norm_draws = rnorm(1000, mean = 0, sd = 1)
+```
+
+7. Create a vector of that is the log of the draws from item 6 which is called “log draws”.
+```{r creatingVariables7}
+log_draws = log(norm_draws)
+```
+
+8. Create a logical vector called “draws NaN” that tests which elements of “log draws” are NaNs.
+```{r creatingVariables8}
+draws_NaN = is.na(log_draws)
+```
+
+9. Create a sequence of integers from 1 to N, where N is the number of NaN elements in “log draws”.
+```{r creatingVariables9}
+sequenceOfNaNs =  seq(which(is.na(log_draws)))
+sequenceOfNaNs
+```
+
+10. Use modular arithmetic operations to create a vector called “class length” whose first element
+is the number of whole hours in one of our class meetings and the second is the number of
+leftover minutes. E.g. an hour and a half would be “c(1,30)”.
+```{r creatingVariables10}
+class_length = c(75%/%60, 75%%60)
+class_length
+```
+
+## Creating Data Sets
+1. Create a variable called “mtcars list” that is each variable in mtcars as a different in the list.
+```{r creatingDatasets1}
+mtcars_list = as.list(ls(mtcars))
+mtcars_list
+```
+
+2. Create a 2 × 13 matrix of the letters of the alphabet where they are read from left to right.
+Call this matrix “letter mat”.
+```{r creatingDatasets2}
+letter_mat = matrix(letters, nrow = 2, ncol = 13, byrow = 1)
+letter_mat
+```
+
+3. Create a matrix that is 5 × 5 of new N(0, 1) draws called “norm draws mat”.
+```{r creatingDatasets3}
+norm_draws_mat = matrix(rnorm(n = 25, mean = 0, sd = 1), nrow = 5, ncol = 5)
+norm_draws_mat
+```
+
+4. Using the “iris” data set, store the Species variable as a factor variable named “iris species”
+where “versicolor” is the first level, “virginica” is the second, and “setosa” is the third.
+```{r creatingDatasets4}
+iris_species = factor(iris$Species, levels = c("versicolor", "virginica", "setosa"))
+iris_species
+```
+
+5. Create a sequence of numbers from 1.2 to 5.3 by 0.05 called “first seq”.
+```{r creatingDatasets5}
+first_seq = seq(from = 1.2, to = 5.3, by = 0.05)
+first_seq
+```
+
+6. Create a sequence of numbers from 1.2 to 5.3 that is 100 elements long called “second seq”.
+```{r creatingDatasets6}
+second_seq = seq(from = 1.2, to = 5.3, length.out = 100)
+second_seq
+```
+
+7. Load the AER library and attach the GSOEP9402 data set (data(“GSOEP9402”)). What are
+the dimensions of the data set? What are the names of the variables? Rename the variables
+to the same name, but all in uppercase rather than lowercase.
+```{r creatingDatasets7}
+library(AER)
+data("GSOEP9402")
+dim(GSOEP9402)
+toupper(names(GSOEP9402))
+```
+
+8. Create the following vectors:
+• “person id” which is a numeric vector from 1 to 50 that increases by 1.
+• “time” which is a numeric vector from 2001 to 2020 that increases by 1.
+```{r creatingDatasets8}
+person_id = seq(from = 1, to = 50, by = 1)
+person_id
+time = seq(from = 2001, to = 2020, by = 1)
+time
+```
+
+9. Finally, create a data.frame called “panel data” that have the following variables:
+• “id” where each element of “person id” is repeated 20 times.
+• “time” where the time vector is repeated 50 times.
+• “draw” that is the vector “norm draws”.
+• Note: this data set is pointless; this is just to get you familiar with creating data.frames
+```{r creatingDatasets9}
+time = rep(time, times=50)
+id = rep(person_id, times  = 20)
+panel_data = data.frame(id, time, norm_draws)
+```
+
+## Indexing
+
+1. Store a vector of the id’s of the elements in“draws NaN” that are NaN called “NaN ids”.
+```{r indexing1}
+nan_Ids = which(draws_NaN == T)
+```
+
+2. Store a vector of the id’s of the elements in “norm draws” that are positive called “pos ids”.
+```{r indexing2}
+pos_ids = which(norm_draws > 0)
+```
+
+3. Store the elements with even indices from “norm draws” called “even id draws”.
+```{r indexing3}
+even_id_draws = which(norm_draws %% 2 == 0)
+```
+
+4. Extract the value from the 20th observation of the “mpg” variable in the “mtcars” data set
+using three different ways we discussed in class.
+```{r indexing4}
+mtcars$mpg[20]
+mtcars[[1]][20]
+mtcars[["mpg"]][20]
+```
+
+5. Extract the value from the 17th observation of the “cyl” and “hp” variables in the “mtcars”
+data set.
+```{r indexing5}
+c(mtcars$cyl[17], mtcars$hp[17])
+```
+
+6. (Harder) Extract all observations from “mtcars” that have 8 cylinders (cyl) using logical
+expressions/indexing.
+```{r indexing6}
+subset(mtcars, mtcars$cyl == 8)
+```
+
+7. Load the “Titanic” data set. This data set documents the survivors and victims of The
+Titanic. Use the “str()” function to determine the dimensions and structure of the data set.
+Print the outcomes for the following subgroups of passengers:
+(a) The outcomes of the female, adult, crew.
+(b) The outcomes for the male, first-class, adults.
+(c) The outcomes of the female, first-class, children.
+(d) The outcomes of the male, second-class, adults.
+```{r indexing7}
+str(Titanic)
+Titanic = data.frame(Titanic)
+partA = Titanic[Titanic$Sex== "Female" & Titanic$Age== "Adult" & Titanic$Class =="Crew",]
+partB = Titanic[Titanic$Sex== "Male" & Titanic$Class =="1st" & Titanic$Age== "Adult",]
+partC = Titanic[Titanic$Sex== "Female" & Titanic$Class =="1st" & Titanic$Age== "Child",]
+partD = Titanic[Titanic$Sex== "Male" & Titanic$Class =="2nd" & Titanic$Age== "Adult",]
+```
+
+8. Using “mtcars list”, extract the “wt” as an atomic vector using two different ways of indexing
+a list discussed in class.
+```{r indexing8}
+mtcars[[mtcars_list[[11]]]]
+```
+
+9. Using “mtcars list”, extract the “wt” variable as a list.
+```{r indexing9}
+mtcars[mtcars_list[[11]]]
+```

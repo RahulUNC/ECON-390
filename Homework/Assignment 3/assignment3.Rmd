@@ -1,0 +1,172 @@
+---
+title: "ECON 390 Assignment 3"
+author: "SID2"
+date: "10/14/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Probability Estimation
+```{r}
+nsim = 10000
+set.seed(123)
+```
+
+1. (Points 3) Suppose that X approx Exp(1/2). Calculate the probability that X <= 3 using simulation
+i.e. Pr(X <= 3).
+```{r}
+lambda = 1/2
+X = rexp(nsim, rate = lambda)
+sim_prob = mean((X <= 3) )
+sim_prob
+```
+
+2. (Points 3) Now, again, suppose that X approx Exp(1/2). Calculate the probability that X2 <= 3
+using simulation i.e. Pr(X2 <= 3).
+```{r}
+sim_prob = mean((X^2 <= 3) & (X^2 >= -3))
+sim_prob
+```
+
+3. (Points 30) Suppose that a firm can release one of three products or nothing at all. A firm will
+release a product that makes the most profit. The revenue of each product j is simply rj = j.
+So the revenue of the first product is 1, the second product is 2, the third product is 3, and
+not releasing anything (the zero product) is 0. However, suppose that the cost of production
+is cj  Exp(1/2). Note, each product has it’s own cost cj . The cost of not releasing anything
+is 0. Profits are then
+pij = rj - cj .
+From an econometric perspective, we can usually observe revenues but costs are trickier, so
+we are assuming they are random. Estimate the probability that the firm will release each
+product (including nothing at all). Again, a product is released if it results in the most amount
+of profit.
+Hint: Form a profit matrix that is Nsim × 4 where each row is a simulation and each column
+is the profit of a product.
+1 Then, for each row, see which column as the highest amount of
+profit. Lastly, use these results to estimate the probability
+```{r}
+j = 1:4
+rj = 1:4
+lambda = 1/2
+cj = rexp(4*nsim, rate = lambda)
+cj = matrix(cj,ncol = 4)
+rj = matrix(rep(1:4, each = nsim), ncol = 4)
+numer = exp(rj - cj)
+denom = apply(numer, 1, sum) + 1
+cprob = numer/denom
+cprobj = apply(cprob, 2, mean)
+cprobj
+```
+
+## Expectation Estimation
+
+1. (Points 3) Suppose that X aprox Exp(1/2). Calculate E[f(X)] where f(x) = x2.
+```{r}
+mean(X^2)
+```
+
+2. (Points 3) Now, again, suppose that X aprox Exp(1/2). Calculate E[f(X)] where f(x) = sin(x).
+```{r}
+mean(sin(X))
+```
+
+3. (Points 3) Calculate E[f(vi))] where f(vi) = e2+vi
+1+e2+vi and vi ~ N(0, 1).
+```{r}
+norm_draws = rnorm(nsim, mean = 0, sd = 1)
+fvi = ((exp(2 +norm_draws))/(1 +(exp(2+norm_draws))))
+mean(fvi)
+```
+
+4. (Points 15) The CRRA utility function programmed in the second problem set is used a lot
+in econ to model risk averse agents whose preferences for risk change as their initial amount
+of wealth changes. Suppose that an agent has some initial wealth w0 = 100 and faces some
+unknown shock epsi tomorrow where epsi ~ N(0, 4).  epsii is added to the initial wealth w0. Calculate
+the expected utility for agents with risk aversion parameters of n = 0.5, 1, 2, 5, 10. Note that
+expected utility is E[CRRA(w0 + epsi; n].
+```{r}
+CRRA = function(c, eta) {
+  if(eta < 0 | !(length(eta) == 1)) {
+    stop("invalid input")
+  }
+  count = 1;
+  output = rep(0, length(c))
+  for(i in c) {
+    if(eta != 1) {
+      output[count] = (i^(1-eta) - 1)/(1 - eta)
+    } else {
+      output[count] = log(i)
+    }
+    count = count + 1
+  }
+  return(output)
+}
+
+norm_draws = rnorm(nsim, mean = 0, sd = 4)
+riskAverrsion = c(0.5, 1, 2, 5, 10)
+count  = 1;
+for(i in riskAverrsion) {
+  expectedUtility = mean(CRRA(100 + norm_draws, i))
+  print(paste("N: ", toString(i), " E[CRRA(w0 + epsi; n]: ", toString(expectedUtility)))
+  count = count + 1
+}
+```
+
+5. (Points 15) Repeat the last question, but with w0 = 1,000.
+```{r}
+count  = 1;
+for(i in riskAverrsion) {
+  expectedUtility = mean(CRRA(1000 + norm_draws, riskAverrsion[count]))
+  print(paste("N: ", toString(riskAverrsion[count]), " E[CRRA(w0 + epsi; n]: ", toString(expectedUtility)))
+  count = count + 1
+}
+```
+
+## The Wage Gap: Bad Controls
+
+1. What is the data generating process and what are the data?
+We are generating the wage of men and women, and exploring the difference and 
+correlation of regressors when looking at wage gap between men and women
+
+2. Monte Carlo Simulation
+```{r}
+low = 15
+high = 30
+n = 10000
+
+c1 = cbind(rep(0, n), rep(0, n))
+c2 = cbind(rep(0, n), rep(0, n))
+c3 = cbind(rep(0, n), rep(0, n), rep(0, n))
+
+for(i in 1:n) {
+  gender = sample(c("M", "F"), n, TRUE, c(0.5, 0.5))
+  jobType = rep(0, n)
+  jobType[which(gender == "M")] = sample(c("low", "high"), length(gender[gender == "M"]), TRUE, c(0.5, 0.5))
+  jobType[which(gender == "F")] = sample(c("low", "high"), length(gender[gender == "F"]), TRUE, c(0.75, 0.25))
+  wage = rep(0, n)
+  wage[which(jobType == "low")] = low
+  wage[which(jobType == "high")] = high
+  c1[i, ] = glm(wage ~ factor(gender))$coef
+  c2[i, ] = glm(wage ~ factor(jobType))$coef
+  c3[i, ] = glm(wage ~ factor(gender) + factor(jobType))$coef
+}
+
+
+```
+
+3) Look at the mean of the coefficients in each regression across models. Compare
+the mean of the sex coefficient in the two models that control for sex. What does 
+this tell us about controlling for occupation in this model?
+```{r}
+apply(c1, 2, mean)
+apply(c2, 2, mean)
+apply(c3, 2, mean)
+```
+Due to a decrease in gender, controlling of occupation underestimates the true 
+wage gpa
+
+
+
+
